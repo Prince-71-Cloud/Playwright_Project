@@ -38,9 +38,11 @@ export default defineConfig({
       name: 'chromium',
       use: {
          viewport:null,
-         launchOptions: {
-          args: ['--start-maximized']
-        },
+        //  launchOptions: {
+        //   args: ['--start-maximized']
+        // },
+        screenshot: 'only-on-failure',
+        video: 'retain-on-failure'
     },
   },
 
