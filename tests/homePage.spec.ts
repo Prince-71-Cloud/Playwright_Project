@@ -9,7 +9,7 @@ test.describe.serial('Login Page Validation', () => {
 
   test.beforeAll(async ({ browser }) => {
     // One window for the whole file
-    context = await browser.newContext({ viewport: null });
+    context = await browser.newContext({ viewport: { width: 1700, height: 800 } });
     // One tab reused by all tests
     page = await context.newPage();
   });
@@ -123,6 +123,44 @@ test.describe.serial('Login Page Validation', () => {
     const homepageTrending = page.getByTestId('filter-link-trending');
     await expect(homepageTrending).toBeVisible();
     await expect(homepageTrending).toHaveText('Trending');
+  });
+
+  test('Home page Header button functionality check', async () => {
+    const headerJustLanded = page.getByTestId('filter-link-just-landed');
+    await expect(headerJustLanded).toBeVisible();
+    await expect(headerJustLanded).toHaveText('Just Landed');
+    await headerJustLanded.click();
+    await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?sortBy=date&sortOrder=desc$`));
+    await page.goto(BASE_URL); // Reset to home for next tests
+
+    const headerMostPopular = page.getByTestId('filter-link-popular');
+    await expect(headerMostPopular).toBeVisible();
+    await expect(headerMostPopular).toHaveText('Popular');
+    await headerMostPopular.click();
+    await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?sortBy=rating&sortOrder=desc$`));
+    await page.goto(BASE_URL); // Reset to home for next tests
+
+    const headerFreemium = page.getByTestId('filter-link-freemium');
+    await expect(headerFreemium).toBeVisible();
+    await expect(headerFreemium).toHaveText('Freemium');
+    await headerFreemium.click();
+    await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?pricingType=freemium$`));
+    await page.goto(BASE_URL);
+    
+    const headerFree = page.getByTestId('filter-link-free');
+    await expect(headerFree).toBeVisible();
+    await expect(headerFree).toHaveText('Free');
+    await headerFree.click();
+    await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?pricingType=free$`));
+    await page.goto(BASE_URL); // Reset to home for next tests
+
+    const headerTrending = page.getByTestId('filter-link-trending');
+    await expect(headerTrending).toBeVisible();
+    await expect(headerTrending).toHaveText('Trending');
+    await headerTrending.click();
+    await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/trending/$`));
+    await page.goto(BASE_URL); // Reset to home for next tests
+
   });
 
   test('Latest AI Tools section visibility', async () => {

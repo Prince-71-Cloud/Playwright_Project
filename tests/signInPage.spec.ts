@@ -9,7 +9,7 @@ test.describe('SignIn Page Flow', () => {
   
     test.beforeAll(async ({ browser }) => {
       // One window for the whole file
-      context = await browser.newContext({ viewport: null });
+      context = await browser.newContext({ viewport:{ width: 1700, height: 800 } });
       // One tab reused by all tests
       page = await context.newPage();
     });

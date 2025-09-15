@@ -8,7 +8,7 @@ test.describe("After sign in Page Flow", () => {
   let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext({ viewport: { width: 1800, height: 900 } });
+    context = await browser.newContext({ viewport: { width: 1700, height: 900 } });
     page = await context.newPage();
   });
 
@@ -35,41 +35,65 @@ test.describe("After sign in Page Flow", () => {
       const navbarLogo = page.getByTestId('navbar-logo');
       await navbarLogo.click();
       await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/?$`));
+      //await page.goBack();
 
       //Navbar Tools link functionality check
       const navbarTools = page.getByTestId('nav-link-Tools');
       await navbarTools.click();
       await expect(page).toHaveURL(`${BASE_URL}/tools/`);
+      await page.goBack();
 
       //Navbar Submit Tool link functionality check
       const navbarSubmitTool = page.getByTestId('nav-link-Submit Tool');
       await navbarSubmitTool.click();
       await expect(page).toHaveURL(`${BASE_URL}/submit/`);  
+      await page.goBack();
 
       //Navbar Search link functionality check
       const navbarSearch = page.getByTestId('nav-link-Search');
       await navbarSearch.click();
       await expect(page).toHaveURL(`${BASE_URL}/search/`);
+      await page.goBack();
     });
 
-  test('Navbar Tools link functionality check', async () => {
-      const navbarTools = page.getByTestId('nav-link-Tools');
-      await navbarTools.click();
-      await expect(page).toHaveURL(`${BASE_URL}/tools/`);
-    });
   
-  test('Navbar Submit Tool link functionality check', async () => {
-      const navbarSubmitTool = page.getByTestId('nav-link-Submit Tool');
-      await navbarSubmitTool.click();
-      await expect(page).toHaveURL(`${BASE_URL}/submit/`);
-    });
-  
-  test('Navbar Search link functionality check', async () => {
-      const navbarSearch = page.getByTestId('nav-link-Search');
-      await navbarSearch.click();
-      await expect(page).toHaveURL(`${BASE_URL}/search/`);
-    });
-  
+  test('Header button functionality check', async () => {
+        const headerJustLanded = page.getByTestId('filter-link-just-landed');
+        await expect(headerJustLanded).toBeVisible();
+        await expect(headerJustLanded).toHaveText('Just Landed');
+        await headerJustLanded.click();
+        await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?sortBy=date&sortOrder=desc$`));
+        await page.goto(BASE_URL); // Reset to home for next tests
+    
+        const headerMostPopular = page.getByTestId('filter-link-popular');
+        await expect(headerMostPopular).toBeVisible();
+        await expect(headerMostPopular).toHaveText('Popular');
+        await headerMostPopular.click();
+        await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?sortBy=rating&sortOrder=desc$`));
+        await page.goto(BASE_URL); // Reset to home for next tests
+    
+        const headerFreemium = page.getByTestId('filter-link-freemium');
+        await expect(headerFreemium).toBeVisible();
+        await expect(headerFreemium).toHaveText('Freemium');
+        await headerFreemium.click();
+        await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?pricingType=freemium$`));
+        await page.goto(BASE_URL);
+        
+        const headerFree = page.getByTestId('filter-link-free');
+        await expect(headerFree).toBeVisible();
+        await expect(headerFree).toHaveText('Free');
+        await headerFree.click();
+        await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/tools/\\?pricingType=free$`));
+        await page.goto(BASE_URL); // Reset to home for next tests
+    
+        const headerTrending = page.getByTestId('filter-link-trending');
+        await expect(headerTrending).toBeVisible();
+        await expect(headerTrending).toHaveText('Trending');
+        await headerTrending.click();
+        await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/trending/$`));
+        await page.goto(BASE_URL); // Reset to home for next tests
+    
+      });
 
   test("User profile dropdown links navigate correctly", async ({}, testInfo) => {
     const userProfileLink = page.getByTestId("user-profile-link");
