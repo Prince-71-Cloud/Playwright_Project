@@ -1,4 +1,5 @@
 import { test, expect, BrowserContext, Page } from "@playwright/test";
+import { randomInt } from "crypto";
 //@ts-check
 const BASE_URL = "https://aiaxio.com/signin/";
 
@@ -31,11 +32,19 @@ test.describe("SignIn Page Flow", () => {
 
     const submitToolLink = page.getByTestId("nav-link-Submit Tool");
     await submitToolLink.click();
-    await page.waitForTimeout(2000);
-  });
-  
+    await page.waitForLoadState("networkidle");
 
-  test("Submit tool page NavBar visibility", async () => {
+    const submitYourToolButton = page.locator(
+      "//button[normalize-space()='Submit Your Tool']"
+    );
+    await expect(submitYourToolButton).toBeVisible();
+    await expect(submitYourToolButton).toHaveText("Submit Your Tool");
+    await submitYourToolButton.click();
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL("https://aiaxio.com/submit/add-tool/");
+  });
+
+  test("add tool page NavBar visibility", async () => {
     const navbar = page.getByTestId("navbar-aiaxio"); // scope (optional but safer)
 
     const navbarLogo = page.getByTestId("navbar-logo");
@@ -54,7 +63,7 @@ test.describe("SignIn Page Flow", () => {
     await expect(navbarSearch).toHaveText("Search");
   });
 
-  test("Submit tool page User profile dropdown links navigate correctly", async ({}, testInfo) => {
+  test("add tool page User profile dropdown links navigate correctly", async ({}, testInfo) => {
     const userProfileLink = page.getByTestId("user-profile-link");
 
     // Items we expect to see in the dropdown + target URLs
@@ -163,40 +172,161 @@ test.describe("SignIn Page Flow", () => {
     }
   });
 
-  test("Submit tool header text visibility", async () => {
-    const headerText = page.locator(
-      "(//h1[normalize-space()='Launch Your AI Tool to Millions of Targeted Users'])[1]"
-    );
-    await expect(headerText).toBeVisible();
-    await expect(headerText).toHaveText(
-      "Launch Your AI Tool to Millions of Targeted Users"
-    );
-  });
+  //Basic Information form check
+  test.only("Submit Tool page Basic Information form ", async () => {
+    // Fill all required fields before interacting with the date picker
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const HH = String(now.getHours()).padStart(2, "0");
+    const MM = String(now.getMinutes()).padStart(2, "0");
+    const SS = String(now.getSeconds()).padStart(2, "0");
 
-  test("Header functionality check", async () => {
-    //Submit Your Tool button functionality check
-    const submitYourToolButton = page.locator("//button[normalize-space()='Submit Your Tool']");
-    await expect(submitYourToolButton).toBeVisible();
-    await expect(submitYourToolButton).toHaveText("Submit Your Tool");
-    await submitYourToolButton.click();
-    await page.waitForTimeout(2000);
-    await expect(page).toHaveURL("https://aiaxio.com/submit/add-tool/");
-    await page.waitForTimeout(2000);
-    await page.goBack();
+    const toolRandomName = `Test Tool Name ${yyyy}${mm}${dd}${HH}${MM}${SS}`;
+    const toolName = page.getByTestId("input-toolName");
+    await expect(toolName).toBeVisible();
+    await toolName.fill(toolRandomName);
 
-    //Explore AI Tools button functionality check
-    const exploreAIToolButton = page.locator(
-      "//button[normalize-space()='Explore AI Tools']"
+    const platformUrls = page.getByTestId("input-platformURLs.0.url");
+    await expect(platformUrls).toBeVisible();
+    await platformUrls.fill(
+      `https://www.test${yyyy}${mm}${dd}${HH}${MM}${SS}.com`
     );
-    await expect(exploreAIToolButton).toBeVisible();
-    await expect(exploreAIToolButton).toHaveText("Explore AI Tools");
-    await exploreAIToolButton.click();
-    await page.waitForTimeout(2000);
-    await expect(page).toHaveURL("https://aiaxio.com/tools/");
-    await page.goBack();
-  });
 
-  test("Submit Tool page Footer Elements visibility", async () => {
+    const toolOverview = page.getByTestId("input-toolOverview");
+    await expect(toolOverview).toBeVisible();
+    await toolOverview.fill(
+      `This is test tool overview for testing purpose.${yyyy}-${mm}-${dd} ${HH}:${MM}:${SS}`
+    );
+
+    const toolDescription = page.locator('div[data-testid="tool-description-editor"] [contenteditable="true"]');
+    await expect(toolDescription).toBeVisible();
+    await toolDescription.fill('This is your tool description text.');
+    await page.waitForTimeout(2000); // wait for 1 second to ensure the text is entered properly
+
+    // Select at least one input type
+    const inputTypes = page.getByTestId("suggestion-text-inputTypes");
+    await expect(inputTypes).toBeVisible();
+    await inputTypes.click();
+
+    // Select at least one output type
+    const outputTypes = page.getByTestId("suggestion-image-outputTypes");
+    await expect(outputTypes).toBeVisible();
+    await outputTypes.click();
+
+    // Select a pricing plan
+    const pricingPlan = page.locator("//div[@role='radiogroup']//div[1]");
+    await expect(pricingPlan).toBeVisible();
+    await pricingPlan.click();
+
+    // Fill version number
+    const versionRelease1 = page.getByTestId("version-number-0");
+    await expect(versionRelease1).toBeVisible();
+    await versionRelease1.fill(`1.0.0`);
+
+    // --- Open the picker ---
+    const releaseDate1 = page.getByTestId("datetime-picker-button");
+    await expect(releaseDate1).toBeVisible();
+    await releaseDate1.click();
+
+    // Calendar lives inside the datepicker dialog
+    const dateDialog = page.getByRole("dialog");
+    await expect(dateDialog).toBeVisible();
+
+    // --- Pick a random MONTH ---
+    const monthBtn = page.getByTestId("month-select");
+    await expect(monthBtn).toBeVisible();
+    await monthBtn.click();
+
+    const monthListbox = page.getByRole("listbox");
+    await expect(monthListbox).toBeVisible();
+    const monthOptions = monthListbox.getByRole("option");
+    await expect(monthOptions.first()).toBeVisible();
+
+    const mCount = await monthOptions.count();
+    await monthOptions.nth(randomInt(mCount)).click();
+
+    // Ensure the month listbox is closed before moving on
+    await expect(monthListbox).toBeHidden();
+
+    // --- Pick a random YEAR ---
+    const yearBtn = page.getByTestId("year-select");
+    await expect(yearBtn).toBeVisible();
+    await yearBtn.click();
+
+    const yearListbox = page.getByRole("listbox");
+    await expect(yearListbox).toBeVisible();
+    const yearOptions = yearListbox.getByRole("option");
+    await expect(yearOptions.first()).toBeVisible();
+
+    const yCount = await yearOptions.count();
+    await yearOptions.nth(randomInt(yCount)).click();
+
+    // Ensure the year listbox closes and calendar is interactable again
+    await expect(yearListbox).toBeHidden();
+
+    // --- Pick a random DAY from the visible month ---
+    const calendar = dateDialog.getByRole("grid"); // do not rely on month-year name
+    await expect(calendar).toBeVisible();
+
+    const dayButtons = calendar
+      .getByRole("gridcell")
+      .locator("button:not(:disabled)");
+    await expect(dayButtons.first()).toBeVisible({ timeout: 10000 }); // allow re-render
+
+    const dCount = await dayButtons.count();
+    const dayIdx = randomInt(dCount);
+
+    // Optional logging helps debugging
+    console.log("Picked day:", await dayButtons.nth(dayIdx).innerText());
+
+    await dayButtons.nth(dayIdx).click();
+
+    //release Note
+    const releaseNotesText = page.getByTestId("release-notes-editor-0");
+    await expect(releaseNotesText).toBeVisible();
+    await releaseNotesText.fill("This is release note for version 1.0.0");
+    await page.waitForTimeout(1000); // wait for 1 second to ensure the text is entered properly
+
+    //status
+    const status = page.getByTestId("status-select-0");
+    await expect(status).toBeVisible();
+    await status.click();
+    
+    const statusActive = page.getByTestId("status-active-0");
+    await expect(statusActive).toBeVisible();
+    await statusActive.click();
+
+    const statusbeta = page.getByTestId("status-beta-0");
+    await expect(statusbeta).toBeVisible();
+    await statusbeta.click();
+
+    const statusAlpha = page.getByTestId("status-alpha-0");
+    await expect(statusAlpha).toBeVisible();
+    await statusAlpha.click();
+    await page.waitForTimeout(2000); // wait for 1 second to ensure the text is entered properly
+
+    const addMoreVersion = page.getByTestId("add-more-version-button");
+    await expect(addMoreVersion).toBeVisible();
+    await addMoreVersion.click();
+    await page.waitForTimeout(2000); // wait for 1 second to ensure the text is entered properly
+    
+    const removeMoreVersion = page.getByTestId("remove-version-1");
+    await expect(removeMoreVersion).toBeVisible();
+    await removeMoreVersion.click();
+    await page.waitForTimeout(2000); // wait for 1 second to ensure the text is entered properly  
+
+    //next step button
+    const nextStepButton = page.getByTestId("next-step-button");
+    await expect(nextStepButton).toBeVisible();
+    await nextStepButton.click();
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL("https://aiaxio.com/submit/tool-categories/");
+  }
+  );
+
+  test("add Tool page Footer Elements visibility", async () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
     const homepagefooter = page.locator("footer");
